@@ -1,276 +1,440 @@
-# AGENTS.md
+# AGENTS.md — Rules for Building Modern Static Sites with Next.js 15
 
-## About Spec Kit and Specify
+**Authoritative, non-negotiable rules and
+expectations** for generating **beautiful, performant, responsive, static,
+production-ready web applications** using **Next.js 15**, **React 19**, and
+**TypeScript 5**.
 
-**GitHub Spec Kit** is a comprehensive toolkit for implementing Spec-Driven Development (SDD) - a methodology that emphasizes creating clear specifications before implementation. The toolkit includes templates, scripts, and workflows that guide development teams through a structured approach to building software.
+The primary goals are:
 
-**Specify CLI** is the command-line interface that bootstraps projects with the Spec Kit framework. It sets up the necessary directory structures, templates, and AI agent integrations to support the Spec-Driven Development workflow.
+- Visually appealing flawless **UI/UX**
+- Smooth **backend integration** (FastAPI or Google Sheets)
+- **Static export** for free hosting (Vercel, Netlify, GitHub Pages)
 
-The toolkit supports multiple AI coding assistants, allowing teams to use their preferred tools while maintaining consistent project structure and development practices.
+**Adherence to the following guidelines is mandatory.**
 
 ---
 
-## General practices
+## PRIMARY DIRECTIVES (MANDATORY)
 
-- Any changes to `__init__.py` for the Specify CLI require a version rev in `pyproject.toml` and addition of entries to `CHANGELOG.md`.
+### 1. Type Safety First
 
-## Adding New Agent Support
+- `strict: true` in `tsconfig.json`.
+- **NEVER** use `any`.
+- Validate all external data (API, forms, env vars) with **Zod**.
+- Derive types using `z.infer<typeof schema>` to keep validation and types in
+  sync.
 
-This section explains how to add support for new AI agents/assistants to the Specify CLI. Use this guide as a reference when integrating new AI tools into the Spec-Driven Development workflow.
+### 2. Test Everything
 
-### Overview
+- Minimum **80% coverage** using **Vitest** + **React Testing Library**.
+- Tests live in `__tests__` directories within feature slices.
+- All components, hooks, utils → unit + integration tests
 
-Specify supports multiple AI agents by generating agent-specific command files and directory structures when initializing projects. Each agent has its own conventions for:
+### 3. Keep It Small & Focused
 
-- **Command file formats** (Markdown, TOML, etc.)
-- **Directory structures** (`.claude/commands/`, `.windsurf/workflows/`, etc.)
-- **Command invocation patterns** (slash commands, CLI tools, etc.)
-- **Argument passing conventions** (`$ARGUMENTS`, `{{args}}`, etc.)
+- Functions ≤ 50 lines, Components ≤ 200 lines, Files ≤ 500 lines
+- Apply **SOLID** + **Clean Code Architecture**
+- Reuse before reinventing
 
-### Current Supported Agents
+### 4. UI / UX Excellence
 
-| Agent | Directory | Format | CLI Tool | Description |
-|-------|-----------|---------|----------|-------------|
-| **Claude Code** | `.claude/commands/` | Markdown | `claude` | Anthropic's Claude Code CLI |
-| **Gemini CLI** | `.gemini/commands/` | TOML | `gemini` | Google's Gemini CLI |
-| **GitHub Copilot** | `.github/prompts/` | Markdown | N/A (IDE-based) | GitHub Copilot in VS Code |
-| **Cursor** | `.cursor/commands/` | Markdown | `cursor-agent` | Cursor CLI |
-| **Qwen Code** | `.qwen/commands/` | TOML | `qwen` | Alibaba's Qwen Code CLI |
-| **opencode** | `.opencode/command/` | Markdown | `opencode` | opencode CLI |
-| **Windsurf** | `.windsurf/workflows/` | Markdown | N/A (IDE-based) | Windsurf IDE workflows |
-| **Amazon Q Developer CLI** | `.amazonq/prompts/` | Markdown | `q` | Amazon Q Developer CLI |
+- Design must be **modern**, **responsive**, and **mobile-first**.
+- All states (loading, error, empty, success) must be handled gracefully.
+- **Framer Motion** for subtle animations.
+- **shadcn/ui**, **Magic UI**, **Aceternity UI** for design consistency.
+- Prioritize clarity, elegance, and user delight.
 
+### 5. Forbidden Practices
 
-### Step-by-Step Integration Guide
+Never use:
 
-Follow these steps to add a new agent (using Windsurf as an example):
+- `@ts-ignore`, `dangerouslySetInnerHTML`
+- Legacy React patterns/deprecated APIs (class components,
+  `componentWillMount`, etc.)
+- Committing code that fails `npm run validate`.
 
-#### 1. Update AI_CHOICES Constant
+---
 
-Add the new agent to the `AI_CHOICES` dictionary in `src/specify_cli/__init__.py`:
+## AI AGENT WORKFLOW
 
-```python
-AI_CHOICES = {
-    "copilot": "GitHub Copilot",
-    "claude": "Claude Code", 
-    "gemini": "Gemini CLI",
-    "cursor": "Cursor",
-    "qwen": "Qwen Code",
-    "opencode": "opencode",
-    "windsurf": "Windsurf",
-    "q": "Amazon Q Developer CLI"  # Add new agent here
+### Core Philosophy
+
+- **KISS (Keep It Simple, Stupid)**: Prioritize straightforward solutions.
+- **YAGNI (You Aren't Gonna Need It)**: Implement only what is required now.
+- **DRY (Don't Repeat Yourself)**: Build modular components/patterns and
+  reuse them.
+- **Fail Fast**: Validate inputs at the boundaries and throw errors immediately.
+
+### Standard Operating Procedure
+
+1. **Analyze Context**: Before writing code, search the existing codebase for
+   similar patterns, components, or utilities. Do not reinvent the wheel.
+2. **Test-Driven Development (TDD)**: Write tests _before_ implementation. This
+   clarifies requirements and ensures correctness.
+3. **Incremental Changes**: Break down complex tasks into small, logical, and
+   testable units.
+4. **Clarify Ambiguities**: If a request is ambiguous, ask for clarification
+   before proceeding.
+
+### Tool Usage
+
+- **Search**: **ALWAYS** use `rg` (ripgrep) for code searches. It is faster and
+  more effective than `grep` or `find`.
+- **Context7 Library Docs**:
+  1.  Check the [`CORE LIBRARIES & STATE MANAGEMENT`](#core-libraries--state-management)
+      section for a direct Context7 ID.
+  2.  If not found, use `resolve-library-id` to find the correct ID.
+  3.  Use `get-library-docs` to fetch **only the specific topics/sections**
+      needed for the task. Do not fetch entire library documentation.
+
+---
+
+## CORE LIBRARIES & STATE MANAGEMENT
+
+### State Management Hierarchy
+
+Follow this order of preference. Do not jump to a global solution prematurely.
+
+1. **Local State (`useState`)**: For state confined to a single component.
+2. **URL State (Search Params)**: For state that should be shareable via URL.
+3. **Feature State (`useContext`)**: For state shared between a few components
+   within the same feature slice.
+4. **Global State (`Zustand`)**: **ONLY** for truly global state (e.g., user
+   authentication, theme).
+
+### Library Reference (Context7 IDs)
+
+```json
+{
+  "Zustand": "/pmndrs/zustand",
+  "React": "/facebook/react",
+  "Next.js": "/vercel/next.js",
+  "Magic UI": "/magicuidesign/magicui",
+  "Aceternity UI": "/websites/ui_aceternity-components",
+  "React Hook Form": "/react-hook-form/react-hook-form",
+  "Zod": "/colinhacks/zod"
 }
 ```
 
-Also update the `agent_folder_map` in the same file to include the new agent's folder for the security notice:
+---
 
-```python
-agent_folder_map = {
-    "claude": ".claude/",
-    "gemini": ".gemini/",
-    "cursor": ".cursor/",
-    "qwen": ".qwen/",
-    "opencode": ".opencode/",
-    "codex": ".codex/",
-    "windsurf": ".windsurf/",  
-    "kilocode": ".kilocode/",
-    "auggie": ".auggie/",
-    "copilot": ".github/",
-    "q": ".amazonq/" # Add new agent folder here
-}
-```
+## BACKEND INTEGRATION
 
-#### 2. Update CLI Help Text
+Before development begins, **ask the user to select their backend**:
 
-Update all help text and examples to include the new agent:
+### 1. FastAPI Integration
 
-- Command option help: `--ai` parameter description
-- Function docstrings and examples
-- Error messages with agent lists
+- Fetch data at build time (SSG)
+- API logic → `src/features/<feature>/api/`
+- Reusable `apiClient` (axios / fetch)
+- Responses validated with Zod
+- Support pagination / filter / sort via query params
+- Webhook effects → polling or revalidation
+- Docs → `README.md` in feature folder
+- Base URL from validated env:
 
-#### 3. Update README Documentation
+  ```ts
+  export const env = envSchema.parse(process.env);
+  const API_BASE = env.NEXT_PUBLIC_API_URL;
+  ```
 
-Update the **Supported AI Agents** section in `README.md` to include the new agent:
+### 2. Google Sheets Integration
 
-- Add the new agent to the table with appropriate support level (Full/Partial)
-- Include the agent's official website link
-- Add any relevant notes about the agent's implementation
-- Ensure the table formatting remains aligned and consistent
+- Use public JSON endpoint (recommended) or Sheets API v4
+- Treat each sheet as a read/write datastore for simple apps
+- Cache client-side (Zustand / localStorage)
+- Validate responses with Zod
+- Document sheet name + columns in `README.md`
 
-#### 4. Update Release Package Script
+---
 
-Modify `.github/workflows/scripts/create-release-packages.sh`:
+## UI/UX & STYLING
 
-##### Add to ALL_AGENTS array:
-```bash
-ALL_AGENTS=(claude gemini copilot cursor qwen opencode windsurf q)
-```
+### Core Design Rules
 
-##### Add case statement for directory structure:
-```bash
-case $agent in
-  # ... existing cases ...
-  windsurf)
-    mkdir -p "$base_dir/.windsurf/workflows"
-    generate_commands windsurf md "\$ARGUMENTS" "$base_dir/.windsurf/workflows" "$script" ;;
-esac
-```
+Deliver a beautiful, modern, and responsive user experience.
 
-#### 4. Update GitHub Release Script
+- **Mobile-First Design**: All components and layouts **MUST** be designed for
+  mobile devices first, then scaled up for tablets and desktops.
+- **Responsiveness**: Use Tailwind CSS utility classes to ensure layouts are
+  fluid and adapt to all screen sizes.
+- **High-Quality Components**: Leverage best-in-class UI libraries for a
+  polished look and feel. Recommended libraries include:
+  - **shadcn/ui**: For foundational, accessible components.
+  - **Aceternity UI**: For complex, visually stunning, copy-paste components.
+  - **Magic UI**: For modern, animated, and engaging UI elements.
+- **Visual Hierarchy**: Ensure a clear visual hierarchy through proper use of
+  typography, spacing, and color to guide the user's attention.
 
-Modify `.github/workflows/scripts/create-github-release.sh` to include the new agent's packages:
+### Accessibility
 
-```bash
-gh release create "$VERSION" \
-  # ... existing packages ...
-  .genreleases/spec-kit-template-windsurf-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-windsurf-ps-"$VERSION".zip \
-  # Add new agent packages here
-```
+- All interactive elements must have accessible labels and ARIA attributes.
+- Contrast ratios must meet **WCAG AA** or higher.
 
-#### 5. Update Agent Context Scripts
+### Interactions & Animation
 
-##### Bash script (`scripts/bash/update-agent-context.sh`):
+- Subtle transitions using **Framer Motion**.
+- Animate key state changes (loading → loaded, modals, hover).
+- Never animate purely for decoration — motion should serve clarity or delight.
 
-Add file variable:
-```bash
-WINDSURF_FILE="$REPO_ROOT/.windsurf/rules/specify-rules.md"
-```
+---
 
-Add to case statement:
-```bash
-case "$AGENT_TYPE" in
-  # ... existing cases ...
-  windsurf) update_agent_file "$WINDSURF_FILE" "Windsurf" ;;
-  "") 
-    # ... existing checks ...
-    [ -f "$WINDSURF_FILE" ] && update_agent_file "$WINDSURF_FILE" "Windsurf";
-    # Update default creation condition
-    ;;
-esac
-```
+## TYPESCRIPT & VALIDATION
 
-##### PowerShell script (`scripts/powershell/update-agent-context.ps1`):
+### Strict `tsconfig.json`
 
-Add file variable:
-```powershell
-$windsurfFile = Join-Path $repoRoot '.windsurf/rules/specify-rules.md'
-```
-
-Add to switch statement:
-```powershell
-switch ($AgentType) {
-    # ... existing cases ...
-    'windsurf' { Update-AgentFile $windsurfFile 'Windsurf' }
-    '' {
-        foreach ($pair in @(
-            # ... existing pairs ...
-            @{file=$windsurfFile; name='Windsurf'}
-        )) {
-            if (Test-Path $pair.file) { Update-AgentFile $pair.file $pair.name }
-        }
-        # Update default creation condition
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
     }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
 ```
 
-#### 6. Update CLI Tool Checks (Optional)
+### Mandatory Type Practices
 
-For agents that require CLI tools, add checks in the `check()` command and agent validation:
+- **Return Types**: All functions and components **MUST** have explicit return
+  types. For React components, use `ReactElement`.
+- **No `any`**: Use `unknown` for values that are truly unknown and perform
+  type-checking.
+- **Zod-driven Types**: **ALWAYS** derive types from Zod schemas using
+  `z.infer<typeof schema>`. This is the single source of truth.
+- **Branded Types**: For all IDs and domain-specific primitives, use Zod's
+  `.brand()` to prevent accidental type misuse.
 
-```python
-# In check() command
-tracker.add("windsurf", "Windsurf IDE (optional)")
-windsurf_ok = check_tool_for_tracker("windsurf", "https://windsurf.com/", tracker)
+### Data Validation with Zod
 
-# In init validation (only if CLI tool required)
-elif selected_ai == "windsurf":
-    if not check_tool("windsurf", "Install from: https://windsurf.com/"):
-        console.print("[red]Error:[/red] Windsurf CLI is required for Windsurf projects")
-        agent_tool_missing = True
+All data crossing a system boundary **MUST** be validated.
+
+```typescript
+import { z } from "zod";
+
+// 1. Branded ID for type safety
+const UserIdSchema = z.string().uuid().brand<"UserId">();
+type UserId = z.infer<typeof UserIdSchema>;
+
+// 2. Environment variables validation (in `src/lib/env.ts`)
+export const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]),
+  NEXT_PUBLIC_APP_URL: z.string().url(),
+  DATABASE_URL: z.string().min(1),
+});
+export const env = envSchema.parse(process.env);
+
+// 3. API response validation
+export const apiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({
+    success: z.boolean(),
+    data: dataSchema,
+    error: z.string().optional(),
+  });
+
+// 4. Form validation
+const formSchema = z.object({
+  email: z.string().email(),
+  username: z.string().min(3),
+});
+type FormData = z.infer<typeof formSchema>;
 ```
-
-**Note**: Skip CLI checks for IDE-based agents (Copilot, Windsurf).
-
-## Agent Categories
-
-### CLI-Based Agents
-Require a command-line tool to be installed:
-- **Claude Code**: `claude` CLI
-- **Gemini CLI**: `gemini` CLI  
-- **Cursor**: `cursor-agent` CLI
-- **Qwen Code**: `qwen` CLI
-- **opencode**: `opencode` CLI
-
-### IDE-Based Agents
-Work within integrated development environments:
-- **GitHub Copilot**: Built into VS Code/compatible editors
-- **Windsurf**: Built into Windsurf IDE
-
-## Command File Formats
-
-### Markdown Format
-Used by: Claude, Cursor, opencode, Windsurf, Amazon Q Developer
-
-```markdown
----
-description: "Command description"
----
-
-Command content with {SCRIPT} and $ARGUMENTS placeholders.
-```
-
-### TOML Format
-Used by: Gemini, Qwen
-
-```toml
-description = "Command description"
-
-prompt = """
-Command content with {SCRIPT} and {{args}} placeholders.
-"""
-```
-
-## Directory Conventions
-
-- **CLI agents**: Usually `.<agent-name>/commands/`
-- **IDE agents**: Follow IDE-specific patterns:
-  - Copilot: `.github/prompts/`
-  - Cursor: `.cursor/commands/`
-  - Windsurf: `.windsurf/workflows/`
-
-## Argument Patterns
-
-Different agents use different argument placeholders:
-- **Markdown/prompt-based**: `$ARGUMENTS`
-- **TOML-based**: `{{args}}`
-- **Script placeholders**: `{SCRIPT}` (replaced with actual script path)
-- **Agent placeholders**: `__AGENT__` (replaced with agent name)
-
-## Testing New Agent Integration
-
-1. **Build test**: Run package creation script locally
-2. **CLI test**: Test `specify init --ai <agent>` command
-3. **File generation**: Verify correct directory structure and files
-4. **Command validation**: Ensure generated commands work with the agent
-5. **Context update**: Test agent context update scripts
-
-## Common Pitfalls
-
-1. **Forgetting update scripts**: Both bash and PowerShell scripts must be updated
-2. **Missing CLI checks**: Only add for agents that actually have CLI tools
-3. **Wrong argument format**: Use correct placeholder format for each agent type
-4. **Directory naming**: Follow agent-specific conventions exactly
-5. **Help text inconsistency**: Update all user-facing text consistently
-
-## Future Considerations
-
-When adding new agents:
-- Consider the agent's native command/workflow patterns
-- Ensure compatibility with the Spec-Driven Development process
-- Document any special requirements or limitations
-- Update this guide with lessons learned
 
 ---
 
-*This documentation should be updated whenever new agents are added to maintain accuracy and completeness.*
+## LINTING, VALIDATION, AND ENVIRONMENT
+
+### ESLint Configuration (`eslint.config.js`)
+
+This configuration enforces style and prevents common errors.
+
+```javascript
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const compat = new FlatCompat({ baseDirectory: __dirname });
+
+export default [
+  ...compat.extends("next/core-web-vitals"),
+  {
+    rules: {
+      // Enforce type safety and clarity
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/explicit-function-return-type": "error",
+      // Prevent accidental logging
+      "no-console": ["error", { allow: ["warn", "error"] }],
+      // Standardize component definitions
+      "react/function-component-definition": [
+        "error",
+        {
+          namedComponents: "arrow-function",
+        },
+      ],
+    },
+  },
+];
+```
+
+### Prettier
+
+Code **MUST** be formatted with Prettier before committing. Run`npm run format`.
+
+### Environment Validation (`src/lib/env.ts`)
+
+```ts
+import { z } from "zod";
+
+export const envSchema = z.object({
+  NEXT_PUBLIC_API_URL: z.string().url().optional(),
+  NEXT_PUBLIC_GOOGLE_SHEET_ID: z.string().optional(),
+  NODE_ENV: z.enum(["development", "test", "production"]),
+});
+
+export const env = envSchema.parse(process.env);
+```
+
+---
+
+## TESTING & QUALITY GATES
+
+### Vitest Configuration (`vitest.config.ts`)
+
+Setup for a fast, modern testing environment.
+
+```ts
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import { resolve } from "path";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+    coverage: {
+      reporter: ["text", "html"],
+      thresholds: {
+        branches: 80,
+        functions: 80,
+        lines: 80,
+        statements: 80,
+      },
+    },
+  },
+  resolve: { alias: { "@": resolve(__dirname, "./src") } },
+});
+```
+
+### Pre-Commit Checklist
+
+**ALL** checks **MUST** pass before creating a pull request.
+
+- [ ] `npm run type-check` passes
+- [ ] `npm run test:coverage` ≥ 80%
+- [ ] `npm run lint` passes
+- [ ] `npm run format:check` passes
+- [ ] All new components, hooks, and functions have JSDoc comments.
+- [ ] All external data is validated with a Zod schema.
+- [ ] All UI states (loading, error, empty, success) are handled.
+
+---
+
+## PERFORMANCE, SECURITY AND STATIC EXPORT
+
+- **Static Site Generation (SSG)**: The project **MUST** be configured for
+  static output. Set `output: 'export'` in `next.config.js`.
+- **Build Verification:**
+  ```bash
+  npm run build && npm run export
+  ```
+  → Output in `/out`
+- **Performance**:
+  - **Default to Server Components**. Use Client Components (`'use client'`)
+    only for interactivity.
+  - Use `next/image` and `next/font` for automatic optimization.
+  - Use dynamic imports (`next/dynamic`) for large, rarely-used client
+    components.
+- **Security**:
+  - **Sanitize All Inputs**: Use Zod for validation.
+  - **Environment Variables**: Load and validate environment variables via
+    `src/lib/env.ts`. **NEVER** expose server secrets to the client.
+  - **CSRF Protection**: Use Next.js built-in mechanisms for Server Actions.
+    Use HTTPS endpoints only.
+
+---
+
+## DEPENDENCIES & SCRIPTS
+
+### Core Dependencies
+
+```json
+{
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.23.0",
+    "zustand": "^4.5.0",
+    "framer-motion": "^11.0.0",
+    "shadcn-ui": "latest",
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "@hookform/resolvers": "^3.3.0",
+    "@testing-library/react": "^15.0.0",
+    "@types/node": "^20.12.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "15.0.0",
+    "jsdom": "^24.0.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.5.0"
+  }
+}
+```
+
+### Key Scripts
+
+- `npm run dev`: Start the development server.
+- `npm run build`: Create a production-ready static export in the `./out`
+  directory.
+- `npm run lint`: Check for linting errors.
+- `npm run test`: Run all tests once.
+- `npm run type-check`: Validate TypeScript types.
+- `npm run validate`: Run all checks (types, lint, test). **MUST** pass before
+  commit.
+
+---
